@@ -72,17 +72,6 @@ func main() {
 }
 ```
 
-### Example of manual connection management
-
-```go
-cm := &ConnManager{conns: make(map[string]*managedConn)}
-conn, err := grpc.NewClient(target, grpc.WithTransportCredentials(insecure.NewCredentials()))
-if err != nil {
-    // error handling
-}
-cm.ReplaceConn("service-name", conn, target)
-```
-
 ## Testing
 
 To run the unit tests, run:
