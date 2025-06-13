@@ -215,7 +215,7 @@ func (cm *ConnManager) watchService(ctx context.Context, service string) {
 		// meta.LastIndex updates only when the result set changes.
 		waitIdx = meta.LastIndex
 		if len(entries) == 0 {
-			cm.logger.Debug("no healthy instances", zap.String("service", service))
+			cm.logger.Warn("no healthy instances", zap.String("service", service))
 			cm.replaceConn(service, nil, "")
 
 			continue
