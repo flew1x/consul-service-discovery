@@ -228,8 +228,8 @@ func (cm *ConnManager) watchService(ctx context.Context, service string) {
 			addr = selected.Node.Address
 		}
 
-		if ip := net.ParseIP(addr); ip == nil {
-			cm.logger.Warn("invalid ip", zap.String("service", service), zap.String("addr", addr))
+		if _, err := net.LookupHost(addr); err != nil {
+			cm.logger.Warn("unresolvable host", zap.String("service", service), zap.String("addr", addr), zap.Error(err))
 
 			continue
 		}
