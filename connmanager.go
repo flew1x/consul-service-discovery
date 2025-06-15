@@ -45,7 +45,7 @@ const (
 	addrTemplate = "%s:%d" // target address format
 )
 
-// ErrConnNotFound is returned when no connection exists for a requested service.
+// ErrConnNotFound is returned when no connection exists for a requested service
 var ErrConnNotFound = errors.New("grpc_connection_not_found")
 
 // Option configures a ConnManager.
@@ -65,7 +65,7 @@ func WithLogger(l *zap.Logger) Option {
 }
 
 // WithRefreshInterval sets the maximum period between Consul blocking queries
-// (lower values == faster reaction, higher == less load). Default: 30 s.
+// (lower values == faster reaction, higher == less load). Default: 30 s
 func WithRefreshInterval(d time.Duration) Option {
 	return func(cm *ConnManager) error {
 		if d <= 0 {
@@ -78,7 +78,7 @@ func WithRefreshInterval(d time.Duration) Option {
 	}
 }
 
-// WithDialOptions appends extra grpc.DialOptions.
+// WithDialOptions appends extra grpc.DialOptions
 func WithDialOptions(opts ...grpc.DialOption) Option {
 	return func(cm *ConnManager) error {
 		cm.dialOpts = append(cm.dialOpts, opts...)
@@ -87,7 +87,7 @@ func WithDialOptions(opts ...grpc.DialOption) Option {
 	}
 }
 
-// ConnManager maintains gRPC client connections discovered via Consul.
+// ConnManager maintains gRPC client connections discovered via Consul
 type ConnManager struct {
 	client    *api.Client
 	watchList []string
@@ -101,14 +101,14 @@ type ConnManager struct {
 	refreshInterval time.Duration
 }
 
-// managedConn couples a connection with its target address for quick comparison.
+// managedConn couples a connection with its target address for quick comparison
 type managedConn struct {
 	target string
 	conn   *grpc.ClientConn
 }
 
 // New creates a ConnManager watching the given services. It never mutates the
-// supplied Consul client; call Start to begin discovery.
+// supplied Consul client; call Start to begin discovery
 func New(client *api.Client, services []string, opts ...Option) (*ConnManager, error) {
 	if client == nil {
 		return nil, errors.New("nil_consul_client")
@@ -136,11 +136,11 @@ func New(client *api.Client, services []string, opts ...Option) (*ConnManager, e
 	return cm, nil
 }
 
-// Start launches background discovery until ctx is cancelled.
+// Start launches background discovery until ctx is canceled
 //
 // The implementation issues long-poll (blocking) queries to Consul's /health
 // endpoint. Each response includes X-Consul-Index; we pass that index back as
-// WaitIndex to achieve efficient, server-side blocking queries.
+// WaitIndex to achieve efficient, server-side blocking queries
 func (cm *ConnManager) Start(ctx context.Context) {
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -156,10 +156,10 @@ func (cm *ConnManager) Start(ctx context.Context) {
 	}
 }
 
-// Stop cancels discovery and closes all active gRPC connections.
+// Stop cancels discovery and closes all active gRPC connections
 func (cm *ConnManager) Stop() { cm.CloseAll() }
 
-// CloseAll is idempotent and threadsafe.
+// CloseAll is idempotent and threadsafe
 func (cm *ConnManager) CloseAll() {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -173,8 +173,8 @@ func (cm *ConnManager) CloseAll() {
 	cm.conns = make(map[string]*managedConn)
 }
 
-// GetConn returns a live *grpc.ClientConn for the requested service.
-// Callers should not Close the returned connection.
+// GetConn returns a live *grpc.ClientConn for the requested service
+// Callers should not Close the returned connection
 func (cm *ConnManager) GetConn(service string) (*grpc.ClientConn, error) {
 	cm.mu.RLock()
 	defer cm.mu.RUnlock()
@@ -187,7 +187,7 @@ func (cm *ConnManager) GetConn(service string) (*grpc.ClientConn, error) {
 	return mc.conn, nil
 }
 
-// watchService performs a Consul blocking query loop for a single service.
+// watchService performs a Consul blocking query loop for a single service
 func (cm *ConnManager) watchService(ctx context.Context, service string) {
 	var waitIdx uint64
 
@@ -212,7 +212,7 @@ func (cm *ConnManager) watchService(ctx context.Context, service string) {
 			continue
 		}
 
-		// meta.LastIndex updates only when the result set changes.
+		// meta.LastIndex updates only when the result set changes
 		waitIdx = meta.LastIndex
 		if len(entries) == 0 {
 			cm.logger.Warn("no healthy instances", zap.String("service", service))
@@ -247,7 +247,7 @@ func (cm *ConnManager) watchService(ctx context.Context, service string) {
 	}
 }
 
-// replaceConn swaps an existing connection atomically; closes the previous one.
+// replaceConn swaps an existing connection atomically
 func (cm *ConnManager) replaceConn(service string, conn *grpc.ClientConn, target string) {
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
@@ -271,7 +271,7 @@ func (cm *ConnManager) replaceConn(service string, conn *grpc.ClientConn, target
 	}
 }
 
-// backoff returns jittered sleep duration on failures.
+// backoff returns jittered sleep duration on failures
 func backoff(base time.Duration) time.Duration {
 	delta := base / 2
 
